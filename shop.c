@@ -3,22 +3,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-char* itoa(int val, int base){
-        static char buf[32] = {0};
-        int i = 30;
-        for(; val && i ; --i, val /= base)
-        buf[i] = "0123456789abcdef"[val % base];
-        return &buf[i+1];
-}
-
-char* paditoa(int i) {
+/* zero pad months and days that are below 10 */
+char* padint(int i) {
         static char buf[2] = {0};
         if (i < 10) {
-                strcpy(buf, "0");
-                strcat(buf, itoa(i, 10));
+                sprintf(buf, "0");
+                snprintf(buf + strlen(buf), 10, "%d", i);
         }
         else
-                strcpy(buf, itoa(i, 10));
+                snprintf(buf, 10, "%d", i);
         return &buf[0];
 }
  
@@ -32,12 +25,13 @@ int main(int argc, char *argv[])
         time(&t);
         lt = localtime(&t);
 
+        /* put your shopping list directory here */
         strcpy(fn, "/home/runrin/docs/shop/");
-        strcat(fn, itoa(lt->tm_year + 1900, 10));
+        snprintf(fn + strlen(fn), 10, "%d", lt->tm_year + 1900);
         strcat(fn, "-");
-        strcat(fn, paditoa(lt->tm_mon + 1));
+        strcat(fn, padint(lt->tm_mon + 1));
         strcat(fn, "-");
-        strcat(fn, paditoa(lt->tm_mday - lt->tm_wday));
+        strcat(fn, padint(lt->tm_mday - lt->tm_wday));
         strcat(fn, "-sl.txt");
        
         fp = fopen(fn, "a+");

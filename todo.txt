@@ -1,0 +1,159 @@
+make it a csv
+or some human readable doc would be better for manual editing
+
+works locally or remotely via ssh
+supports multiple users sharing one file
+.shop file in $HOME
+
+---------------------------------------------------------------------------------
+
+"shop --status"
+"shop -s"
+        outstanding list since [date opened].
+        all lists closed since [date closed].
+
+---------------------------------------------------------------------------------
+
+"shop --echo"
+"shop -e"
+        contents of list [date opened]: 
+        item1
+        item2
+        item3
+
+"shop --echo sections"
+"shop -e s"
+        headers of list [date opened]:
+        [header 1] contains n items.
+        [header 2] contains n items.
+        n items exist without a header
+
+"shop --echo [header1] [header2]"
+"shop -e [header1] [header2]"
+        [header 1] of list [date opened] containts the following items:
+                item1
+                item2
+        [header 2] of list [date opened] contains the following items:
+                item1
+                item2 
+
+"shop --echo nohead"
+"shop -e nohead"
+        headless items in list [date opened]:
+                item1
+                item2
+
+---------------------------------------------------------------------------------
+
+"shop --close"
+"shop -c"
+        marking [date opened] list as closed on [date closed].
+
+"shop --close [datetime]"
+        marking [date opened] list as closed on [datetime].
+
+---------------------------------------------------------------------------------
+
+"shop --new item1 item2 ..."
+"shop -n item1 item2 ..."
+        marking [date opened] list as closed on [date closed].
+        starting new list [date opened].
+        appending item1, item2 ... to new list.
+
+        no outstanding list exists.
+        starting new list [date opened].
+        appending item1, item2, ... to [date opened].
+ 
+---------------------------------------------------------------------------------
+
+"shop item1 item2 ..."
+        no outstanding list exists.
+        starting new list [date opened].
+        appending item1, item2, ... to [date opened].
+        
+        appending item1, item2, ... to outstanding list opened [date opened].
+
+"shop !item1 item2 ..."
+        removing item1 from list opened [date opened].
+        appending item2, ... to outstanding list opened [date opened].
+
+"shop header1.item1 header2.item2 ..."
+        appending header1.item1, header2.item1 to list [date opened].
+
+"shop !header1"
+        removing header1 from list opened [date opened]. its contents remain
+        without a header.
+
+"shop !header1.all"
+        removing header1 and all its contentsfrom list opened [date opened].
+
+---------------------------------------------------------------------------------
+
+"shop --duplicate"
+"shop -d"
+        close outstanding list [date opened] and create a new one? (y/n)
+        marking [date opened] list as closed on [date closed].
+        duplicating closed list to [date opened].
+
+"shop --duplicate [old list]"
+"shop -d"
+        [old list] was marked closed on [date closed].
+        duplicating [old list] to [date opened].
+
+        [old list] hasn't been closed. closing it [date closed].
+        duplicating [old list] to [date opened].
+
+        [old list] was marked closed on [date closed].
+        close outstanding list [date opened]? (y/n)
+
+                marking [date opened] list as closed on [date closed].
+                duplicating [old list] to [date opened].
+
+                leaving [date opened] open. aborting.
+                use sl --merge to duplicate items from an old list in an
+                outstanding one"
+
+"shop --duplicate --interactive"
+"shop -di"
+        marking [date opened] list as closed on [date closed].
+        duplicating closed list into [date opened]...
+                include item1? (y/n) 
+                include header1.item2? (y/n) 
+                change quantity of header1.item2? currently [4] (y/n) 
+                new quantity...
+
+---------------------------------------------------------------------------------
+
+"shop --merge [old list]"
+"shop -m [old list]"
+        merging [old list] into [date opened].
+        5 duplicate items, ignore them? (y/n)
+        increase quantity of duplicate items? (y/n)
+
+"shop --merge --interactive [old list]"
+"shop -mi [old list]"
+        same as duplicate interactive (merge these features?)
+
+---------------------------------------------------------------------------------
+
+"shop --print"
+"shop -p"
+        printing formatted [date opened] list.
+
+"shop --print --close"
+"shop -pc"
+        printing formatted [date opened] list.
+        marking [date opened] list as closed on [date closed].
+
+---------------------------------------------------------------------------------
+
+"shop --help"
+"shop -h"
+        list opions, etc.
+
+---------------------------------------------------------------------------------
+
+
+"shop --version"
+"shop -v"
+        print version.

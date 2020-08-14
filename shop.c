@@ -3,6 +3,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+void getFileCreationTime(char *path) {
+    struct stat attr;
+    stat(path, &attr);
+    printf("Last modified time: %s", ctime(&attr.st_mtime));
+}
+
 
 /* zero pad months and days that are below 10 */
 char* padint(int i) {
@@ -16,6 +26,34 @@ char* padint(int i) {
         return &buf[0];
 }
  
+
+int main()
+{
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir ("/home/runrin/docs/shop")) != NULL) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir (dir)) != NULL) {
+		printf ("%s ", ent->d_name);
+		getFileCreationTime(ent->d_name);
+	}
+	closedir (dir);
+	}
+	else {
+		/* could not open directory */
+		perror ("");
+		return EXIT_FAILURE;
+	}
+
+
+	getFileCreationTime("todo.txt");
+
+}
+
+
+
+
+/*
 int main(int argc, char *argv[])
 {
         FILE *fp;
@@ -38,11 +76,13 @@ int main(int argc, char *argv[])
 
         time(&t);
         lt = localtime(&t);
-
+*/
         /* put your shopping list directory here */
+/*
         strcpy(path, "/home/runrin/docs/shop/");
-
+*/
         /* prepare the filename based on the first day of the week you are in */
+/*
         strcpy(fn, path);
         snprintf(fn + strlen(fn), 10, "%d", lt->tm_year + 1900);
         strcat(fn, "-");
@@ -50,8 +90,9 @@ int main(int argc, char *argv[])
         strcat(fn, "-");
         strcat(fn, padint(lt->tm_mday - lt->tm_wday));
         strcat(fn, "-sl");
-
+*/
         /* handle existing -2 file, and -n flag  */
+/*
         strcpy(chkfn, fn);
         strcat(chkfn, "-2.txt");
         if (access(chkfn, F_OK) != -1) {
@@ -72,3 +113,4 @@ int main(int argc, char *argv[])
         }
         fclose(fp);
 }
+*/

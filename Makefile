@@ -1,6 +1,9 @@
 plainassmake:
-	gcc -Wall shop.c -o shop
+	clang -Wextra -g shop.c -o shop
 
 install:
-	gcc -Wall shop.c -o shop
+	clang -Wextra -g shop.c -o shop
 	cp sl /usr/local/bin/
+
+clean:
+	rm ./shop

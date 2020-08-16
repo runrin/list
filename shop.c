@@ -6,111 +6,63 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <pwd.h>
 
-void getFileCreationTime(char *path) {
-    struct stat attr;
-    stat(path, &attr);
-    printf("Last modified time: %s", ctime(&attr.st_mtime));
+#define PATH "/home/runrin/docs/shop"
+
+void lastmod(char *path) {
+	struct stat attr;
+	struct tm *lt;
+	stat(path, &attr);
+
+	lt = localtime(&attr.st_mtime);
+	printf("%d/%d\t%d:%d\t", (lt->tm_mon + 1), lt->tm_mday, lt->tm_hour, lt->tm_min);	
 }
 
-
-/* zero pad months and days that are below 10 */
-char* padint(int i) {
-        static char buf[2] = {0};
-        if (i < 10) {
-                sprintf(buf, "0");
-                snprintf(buf + strlen(buf), 10, "%d", i);
+int parsedir(char *path, struct dirent **out, unsigned *out_num)
+{
+        DIR *dir;
+        unsigned int capacity;
+        struct dirent *ent;
+        *out = NULL;
+        capacity = *out_num = 0;
+        if ((dir = opendir(path)) != NULL) {
+                while ((ent = readdir(dir)) != NULL) {
+                        if(*out_num == capacity){
+                          capacity = (capacity == 0) ? 16 : capacity << 1;
+                          *out = realloc(*out, capacity * sizeof(struct dirent));
+                        }
+                        /* printf("In parsedir: '%s'\n", ent->d_name); */
+                        memcpy(*out + *out_num, ent, sizeof(struct dirent));
+                        ++*out_num;
+                }
+        closedir(dir);
+        return(0);
         }
-        else
-                snprintf(buf, 10, "%d", i);
-        return &buf[0];
+        else {
+                perror("");
+                return EXIT_FAILURE;
+        }
 }
- 
 
 int main()
 {
-	DIR *dir;
-	struct dirent *ent;
-	if ((dir = opendir ("/home/runrin/docs/shop")) != NULL) {
-		/* print all the files and directories within directory */
-		while ((ent = readdir (dir)) != NULL) {
-		printf ("%s ", ent->d_name);
-		getFileCreationTime(ent->d_name);
-	}
-	closedir (dir);
-	}
-	else {
-		/* could not open directory */
-		perror ("");
-		return EXIT_FAILURE;
-	}
+        struct dirent *ent;
+        unsigned count, i;
+	char *fullpath;
+        
+        fullpath = (char *) malloc(100);
+        parsedir(PATH, &ent, &count);
+        for(i = 0; i < count; i++) {
+                if (strcmp(ent[i].d_name, ".") == 0 || strcmp(ent[i].d_name, "..") == 0)
+                        continue;
+        	strcpy(fullpath, PATH);
+                strcat(fullpath, "/");
+                strcat(fullpath, ent[i].d_name);
 
-
-	getFileCreationTime("todo.txt");
-
-}
-
-
-
-
-/*
-int main(int argc, char *argv[])
-{
-        FILE *fp;
-        time_t t;
-        struct tm *lt;
-        char fn[50], chkfn[50], path[50];
-        int c, nflag;
-
-        nflag = 0;
-        while ((c = getopt (argc, argv, "n:")) != -1)
-                switch (c)
-                {
-                        case 'n':
-                                nflag = 1;
-                                break;
-                        default:
-                                break;
-                        return 1;
-                }
-
-        time(&t);
-        lt = localtime(&t);
-*/
-        /* put your shopping list directory here */
-/*
-        strcpy(path, "/home/runrin/docs/shop/");
-*/
-        /* prepare the filename based on the first day of the week you are in */
-/*
-        strcpy(fn, path);
-        snprintf(fn + strlen(fn), 10, "%d", lt->tm_year + 1900);
-        strcat(fn, "-");
-        strcat(fn, padint(lt->tm_mon + 1));
-        strcat(fn, "-");
-        strcat(fn, padint(lt->tm_mday - lt->tm_wday));
-        strcat(fn, "-sl");
-*/
-        /* handle existing -2 file, and -n flag  */
-/*
-        strcpy(chkfn, fn);
-        strcat(chkfn, "-2.txt");
-        if (access(chkfn, F_OK) != -1) {
-                strcat(fn, "-2.txt");
-                printf("A second list exists for this week.\n");
+                /*printf("%s\n", ent[i].d_name);*/
+                lastmod(fullpath);
+                printf("%s\n", fullpath);
         }
-        else 
-                strcat(fn, nflag ? "-2.txt" : ".txt");
-
-
-        if (nflag)
-                printf("Creating a second list for this week.\n");
-
-        fp = fopen(fn, "a+");
-        for (int i = nflag ? 2 : 1; i < argc; i++) { 
-                printf("appending \"%s\" to: %s\n", argv[i], fn + strlen(path));
-                fprintf(fp, "%s\n", argv[i]);
-        }
-        fclose(fp);
+        free(ent);
 }
-*/

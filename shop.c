@@ -10,13 +10,38 @@
 
 #define PATH "/home/runrin/docs/shop"
 
-void lastmod(char *path) {
+/* zero pad months and days that are below 10 */
+char* padint(int i) {
+        static char buf[3] = {0};
+        if (i < 10) {
+                sprintf(buf, "0");
+                snprintf(buf + strlen(buf), 10, "%d", i);
+        }
+        else
+                snprintf(buf, 3, "%d", i);
+        return &buf[0];
+}
+
+int lastmod(char *path) {
 	struct stat attr;
 	struct tm *lt;
+        char* outstr;
+
+        outstr = (char *) malloc(100);
 	stat(path, &attr);
 
 	lt = localtime(&attr.st_mtime);
-	printf("%d/%d\t%d:%d\t", (lt->tm_mon + 1), lt->tm_mday, lt->tm_hour, lt->tm_min);	
+
+        strcpy(outstr, padint(lt->tm_mon + 1));
+        strcat(outstr, "/");
+        strcat(outstr, padint(lt->tm_mday));
+        strcat(outstr, " ");
+        strcat(outstr, padint(lt->tm_hour));
+        strcat(outstr, ":");
+        strcat(outstr, padint(lt->tm_min));
+
+        printf("%s ", outstr);
+        return(0);
 }
 
 int parsedir(char *path, struct dirent **out, unsigned *out_num)

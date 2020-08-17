@@ -10,7 +10,8 @@
 
 #define PATH "/home/runrin/docs/shop"
 
-/* zero pad months and days that are below 10 */
+/* zero pad integers that are below 10, and return the int as a string */
+/* kind of like itoa(), but pads single digit numbers */
 char* padint(int i) {
         static char buf[3] = {0};
         if (i < 10) {
@@ -22,6 +23,8 @@ char* padint(int i) {
         return &buf[0];
 }
 
+/* exists for testing purposes only really */
+/* never actually called anymore */
 int lastmod(char *path) {
 	struct stat attr;
 	struct tm *lt;
@@ -44,6 +47,9 @@ int lastmod(char *path) {
         return(0);
 }
 
+/* take a path to a directory, a dirent array, and an unsigned int, and fill
+ * populate the array with dirents of each file within the directory, out_num
+ * is set to the total number of files */
 int parsedir(char *path, struct dirent **out, unsigned *out_num)
 {
         DIR *dir;
@@ -87,6 +93,7 @@ int main(int argc, char*argv[])
 
         nflag = eflag = 0;
         
+        /* initialize strings so that strcpy() can be used later */
         fullpath = (char *) malloc(100);
         latestpath = (char *) malloc(100);
         fulllatest = (char *) malloc(100);
@@ -111,16 +118,18 @@ int main(int argc, char*argv[])
                                 printf("\tshop -e\n");
                                 printf("See this help message:\n");
                                 printf("\tshop -h\n");
+                                exit(0);
                         default:
                                 break;
                         return 1;
                 }
 
+        /* create a new file, and append some items to the list */
         if (nflag) {
                 time(&nft);
                 lt = localtime(&nft);
 
-                /* prepare the filename based on the first day of the week you are in */
+                /* prepare the filename based on the current date/time */
                 strcpy(newfile, PATH);
                 strcat(newfile, "/");
                 snprintf(newfile + strlen(PATH) + 1, 10, "%d", lt->tm_year + 1900);
@@ -137,6 +146,7 @@ int main(int argc, char*argv[])
                 strcat(newfile, "-sl.txt");
                 
                 printf("Creating new file %s...\n", newfile);
+                /* create the file if it doesnt exist */
                 touch = fopen(newfile, "a+");
                 fclose(touch);
                 printf("\n");
@@ -145,39 +155,53 @@ int main(int argc, char*argv[])
 
 
         parsedir(PATH, &ent, &count);
+        
+        /* we will store the time_t here */
         t = 0;
 
+        /* removed so -e works with lp */
         /* printf("Finding most recent file...\n\n"); */
 
         for(i = 0; i < count; i++) {
+                /* ignore ., and .. */
                 if (strcmp(ent[i].d_name, ".") == 0 || strcmp(ent[i].d_name, "..") == 0)
                         continue;
+
         	strcpy(fullpath, PATH);
                 strcat(fullpath, "/");
                 strcat(fullpath, ent[i].d_name);
 
+                /* removed so -e works with lp */
                 /*printf("%s\n", ent[i].d_name);*/
-                lastmod(fullpath);
+                /* removed so -e works with lp */
                 /* printf("%s\n", fullpath); */
 
                 stat(fullpath, &attr);
 
+                /* removed so -e works with lp */
                 /* printf("\ttime since epoch: %ld\n", attr.st_mtime); */
+
+                /* check if the current file's epoch time is larger than the largerst previous one. */
                 if (attr.st_mtime > t) {
+                        /* removed so -e works with lp */
                         /* printf("\t%s was modified more recently than previous files.\n", ent[i].d_name); */
+
+                        /* store the new largest epoch time, and the filename */
 	                t = attr.st_mtime;
                         latestpath = ent[i].d_name;
                 }
         }
         free(ent);
 
-
+        /* concatenate the most recently edited file with PATH/ */
         strcpy(fulllatest, PATH);
         strcat(fulllatest, "/");
         strcat(fulllatest, latestpath);
+        /* removed so -e works with lp */
         /* printf("\nThe most recently modified file is: %s\n\n", fulllatest); */
 
 
+        /* simply print the file to stdout, and exit */
         if (eflag) {
                 fp=fopen(fulllatest,"r");
                 while((s=fgetc(fp))!=EOF) {
@@ -188,12 +212,12 @@ int main(int argc, char*argv[])
         }
 
 
-
+        /* add items to file */
         fp = fopen(fulllatest, "a+");
         for (int i = nflag ? 2 : 1; i < argc; i++) { 
                 printf("appending \"%s\" to: %s\n", argv[i], latestpath);
                 fprintf(fp, "%s\n", argv[i]);
         }
         fclose(fp);
-
+        exit(0);
 }

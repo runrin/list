@@ -11,9 +11,9 @@
 #define PATH "/home/runrin/docs/shop"
 #define NAME "XXXX-XX-XX_XX:XX:XX-sl.txt"
 
-/* take a path to a directory, a dirent array, and an unsigned int, and fill
- * populate the array with dirents of each file within the directory, out_num
- * is set to the total number of files */
+/* take a path to a directory, a dirent array, and an unsigned int, and populate
+ * the array with dirents of each file within the directory, out_num is set to
+ * the total number of files */
 int parsedir(char *path, struct dirent **out, unsigned *out_num)
 {
         DIR *dir;
@@ -27,7 +27,6 @@ int parsedir(char *path, struct dirent **out, unsigned *out_num)
                           capacity = (capacity == 0) ? 16 : capacity << 1;
                           *out = realloc(*out, capacity * sizeof(struct dirent));
                         }
-                        /* printf("In parsedir: '%s'\n", ent->d_name); */
                         memcpy(*out + *out_num, ent, sizeof(struct dirent));
                         ++*out_num;
                 }
@@ -42,23 +41,15 @@ int parsedir(char *path, struct dirent **out, unsigned *out_num)
 
 int main(int argc, char*argv[])
 {
-        struct dirent *ent;
-        struct stat attr;
-        time_t t;
-        unsigned count, i;
-	char *fullpath;
-        char *latestpath, *fulllatest, *newfile;
-
-        FILE *fp, *touch;
+        /* unsigned i; */
+        char *newestfp;
         int c, nflag, eflag, oflag;
-        char s;
+        
+        newestfp = (char *) malloc(100);
+
+/*----------------------------------------------------------------------------*/
 
         nflag = eflag = oflag = 0;
-        
-        /* initialize strings so that strcpy() can be used later */
-        fullpath = latestpath = fulllatest = newfile = (char *) malloc(100);
-
-
         while ((c = getopt (argc, argv, "n:eho")) != -1)
                 switch (c)
                 {
@@ -84,12 +75,17 @@ int main(int argc, char*argv[])
                         return 1;
                 }
 
+/*----------------------------------------------------------------------------*/
+
         /* create a new file with a name based on the date and time */
         if (nflag) {
                 time_t nft;
                 struct tm *lt;
-                char *buffer;
+                char *buffer, *newfp;
                 size_t full_len;
+                FILE *touch;
+
+                newfp = (char *) malloc(100);
 
                 time(&nft);
                 lt = localtime(&nft);
@@ -97,13 +93,12 @@ int main(int argc, char*argv[])
                 full_len = strlen(PATH) + strlen(NAME);
                 buffer = malloc(full_len);
 
-                strftime(newfile, strlen(NAME), "%F_%T-sl.txt", lt);
-                printf("Creating new file %s...\n", newfile);
+                strftime(newfp, strlen(NAME) + 1, "%F_%T-sl.txt", lt);
+                printf("Creating new file %s...\n", newfp);
 
                 strcpy(buffer, PATH);
                 strcat(buffer, "/");
-                strcat(buffer, newfile);
-                printf("%s\n", buffer);
+                strcat(buffer, newfp);
 
                 touch = fopen(buffer, "a+");
                 fclose(touch);
@@ -111,49 +106,58 @@ int main(int argc, char*argv[])
                 printf("\n");
         }
 
+/*----------------------------------------------------------------------------*/
 
-        /* fill a dirent array with every file in the directory */
-        parsedir(PATH, &ent, &count);
+        /* determine the most recent file and save the path */
+        {
+                time_t t;
+                char *buffer, *lastpath;
+                struct dirent *ent;
+                struct stat attr;
+                unsigned count;
+
+                buffer = lastpath = (char *) malloc(100);
+
+                /* fill a dirent array with every file in the directory */
+                parsedir(PATH, &ent, &count);
         
-        /* we will store the time_t associated with each file here 
-         * TODO why is this declared earlier, should it be within a smaller 
-         * scope? */
-        t = 0;
+                t = 0;
+                for(unsigned i = 0; i < count; i++) {
+                        /* ignore . and .. */
+                        if (strcmp(ent[i].d_name, ".") == 0 ||
+                                        strcmp(ent[i].d_name, "..") == 0)
+                                continue;
 
-        for(i = 0; i < count; i++) {
-                /* ignore . and .. */
-                if (strcmp(ent[i].d_name, ".") == 0 || strcmp(ent[i].d_name, "..") == 0)
-                        continue;
+                        strcpy(buffer, PATH);
+                        strcat(buffer, "/");
+                        strcat(buffer, ent[i].d_name);
 
-                /* TODO why is fullpath declared so much earlier, is this the
-                 * correct thing to do? */
-        	strcpy(fullpath, PATH);
-                strcat(fullpath, "/");
-                strcat(fullpath, ent[i].d_name);
+                        stat(buffer, &attr);
 
-                stat(fullpath, &attr);
-
-                /* check if the current file's epoch time is larger than the largerst previous one. */
-                if (attr.st_mtime > t) {
-                        /* store the new largest epoch time, and the filename */
-	                t = attr.st_mtime;
-                        latestpath = ent[i].d_name;
+                        /* check if the current file's epoch time is larger than
+                         * the largerst previous one. */
+                        if (attr.st_mtime > t) {
+                                /* store the new largest epoch time, and the
+                                 * filename */
+                                t = attr.st_mtime;
+                                lastpath = ent[i].d_name;
+                        }
                 }
+                free(ent);
+
+                /* save the final path for later */
+                strcpy(newestfp, PATH);
+                strcat(newestfp, "/");
+                strcat(newestfp, lastpath);
         }
-        free(ent);
 
-        /* concatenate the most recently edited file with PATH/
-         * TODO again, fulllatest not really necessary */
-        strcpy(fulllatest, PATH);
-        strcat(fulllatest, "/");
-        strcat(fulllatest, latestpath);
-        /* removed so -e works with lp */
-        /* printf("\nThe most recently modified file is: %s\n\n", fulllatest); */
-
+/*----------------------------------------------------------------------------*/
 
         /* simply print the file to stdout, and exit */
         if (eflag) {
-                fp=fopen(fulllatest,"r");
+                char s;
+                FILE *fp;
+                fp=fopen(newestfp,"r");
                 while((s=fgetc(fp))!=EOF) {
                         printf("%c",s);
                 }
@@ -161,7 +165,9 @@ int main(int argc, char*argv[])
                 exit(0);
         }
 
-        /* open file with EDITOR */
+/*----------------------------------------------------------------------------*/
+
+        /* open file with EDITOR and exit */
         if (oflag) {
 		#define CHECK_COMMAND(X) ((system("which " X " 2>&1 >/dev/null") == 0) ? ("" X) : NULL)
                 const char *editor;
@@ -184,25 +190,29 @@ int main(int argc, char*argv[])
                         exit(-1);
                 }
 
-                buffer = malloc(strlen(editor) + strlen(fulllatest) + 2);
+                buffer = malloc(strlen(editor) + strlen(newestfp) + 2);
                 strcpy(buffer, editor);
                 strcat(buffer, " ");
-                strcat(buffer, fulllatest);
+                strcat(buffer, newestfp);
 
-                printf("Opening %s with %s...\n", latestpath, editor);
+                printf("Opening %s with %s...\n", newestfp, editor);
                 system(buffer);
 
                 free(buffer);
                 exit(0);
         }
 
+/*----------------------------------------------------------------------------*/
 
         /* add items to file */
-        fp = fopen(fulllatest, "a+");
-        for (int i = nflag ? 2 : 1; i < argc; i++) { 
-                printf("appending \"%s\" to: %s\n", argv[i], latestpath);
-                fprintf(fp, "%s\n", argv[i]);
+        {
+                FILE *fp;
+                fp = fopen(newestfp, "a+");
+                for (int i = nflag ? 2 : 1; i < argc; i++) { 
+                        printf("appending \"%s\" to: %s\n", argv[i], newestfp);
+                        fprintf(fp, "%s\n", argv[i]);
+                }
+                fclose(fp);
+                exit(0);
         }
-        fclose(fp);
-        exit(0);
 }

@@ -1,9 +1,9 @@
 plainassmake:
-	clang -Wextra -g shop.c -o shop
+	clang -Wextra -g list.c -o list
 
 install:
-	clang -Wextra -g shop.c -o shop
-	cp sl /usr/local/bin/
+	clang -Wextra -g list.c -o list
+	cp list /usr/local/bin/
 
 clean:
-	rm ./shop
+	rm ./list

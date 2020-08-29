@@ -9,43 +9,7 @@
 #include <pwd.h>
 
 #define PATH "/home/runrin/docs/shop"
-
-/* zero pad integers that are below 10, and return the int as a string */
-/* kind of like itoa(), but pads single digit numbers */
-char* padint(int i) {
-        static char buf[3] = {0};
-        if (i < 10) {
-                sprintf(buf, "0");
-                snprintf(buf + strlen(buf), 10, "%d", i);
-        }
-        else
-                snprintf(buf, 3, "%d", i);
-        return &buf[0];
-}
-
-/* exists for testing purposes only really */
-/* never actually called anymore */
-int lastmod(char *path) {
-	struct stat attr;
-	struct tm *lt;
-        char* outstr;
-
-        outstr = (char *) malloc(100);
-	stat(path, &attr);
-
-	lt = localtime(&attr.st_mtime);
-
-        strcpy(outstr, padint(lt->tm_mon + 1));
-        strcat(outstr, "/");
-        strcat(outstr, padint(lt->tm_mday));
-        strcat(outstr, " ");
-        strcat(outstr, padint(lt->tm_hour));
-        strcat(outstr, ":");
-        strcat(outstr, padint(lt->tm_min));
-
-        /* printf("%s ", outstr); */
-        return(0);
-}
+#define NAME "XXXX-XX-XX_XX:XX:XX-sl.txt"
 
 /* take a path to a directory, a dirent array, and an unsigned int, and fill
  * populate the array with dirents of each file within the directory, out_num
@@ -86,21 +50,16 @@ int main(int argc, char*argv[])
         char *latestpath, *fulllatest, *newfile;
 
         FILE *fp, *touch;
-        time_t nft;
-        struct tm *lt;
-        int c, nflag, eflag;
+        int c, nflag, eflag, oflag;
         char s;
 
-        nflag = eflag = 0;
+        nflag = eflag = oflag = 0;
         
         /* initialize strings so that strcpy() can be used later */
-        fullpath = (char *) malloc(100);
-        latestpath = (char *) malloc(100);
-        fulllatest = (char *) malloc(100);
-        newfile = (char *) malloc(100);
+        fullpath = latestpath = fulllatest = newfile = (char *) malloc(100);
 
 
-        while ((c = getopt (argc, argv, "n:eh")) != -1)
+        while ((c = getopt (argc, argv, "n:eho")) != -1)
                 switch (c)
                 {
                         case 'n':
@@ -109,83 +68,73 @@ int main(int argc, char*argv[])
                         case 'e':
                                 eflag = 1;
                                 break;
+                        case 'o':
+                                oflag = 1;
+                                break;
+
                         case 'h':
-                                printf("Standard usage:\n");
-                                printf("\tshop item1 item2 ...\n");
-                                printf("Create a new list:\n");
-                                printf("\tshop -n item1 item2 ...\n");
-                                printf("Echo current list:\n");
-                                printf("\tshop -e\n");
-                                printf("See this help message:\n");
-                                printf("\tshop -h\n");
+                                printf("Usage: list [OPTION] item1 item2 ...\n");
+                                printf("  -n\tcreate new list and append items\n");
+                                printf("  -e\techo current list to stdout\n");
+                                printf("  -o\topen current list in EDITOR\n");
+                                printf("  -h\tdisplay this help and exit\n");
                                 exit(0);
                         default:
                                 break;
                         return 1;
                 }
 
-        /* create a new file, and append some items to the list */
+        /* create a new file with a name based on the date and time */
         if (nflag) {
+                time_t nft;
+                struct tm *lt;
+                char *buffer;
+                size_t full_len;
+
                 time(&nft);
                 lt = localtime(&nft);
 
-                /* prepare the filename based on the current date/time */
-                strcpy(newfile, PATH);
-                strcat(newfile, "/");
-                snprintf(newfile + strlen(PATH) + 1, 10, "%d", lt->tm_year + 1900);
-                strcat(newfile, "-");
-                strcat(newfile, padint(lt->tm_mon + 1));
-                strcat(newfile, "-");
-                strcat(newfile, padint(lt->tm_mday));
-                strcat(newfile, "_");
-                strcat(newfile, padint(lt->tm_hour));
-                strcat(newfile, ":");
-                strcat(newfile, padint(lt->tm_min));
-                strcat(newfile, ":");
-                strcat(newfile, padint(lt->tm_sec));
-                strcat(newfile, "-sl.txt");
-                
-                printf("Creating new file %s...\n", newfile);
-                /* create the file if it doesnt exist */
-                touch = fopen(newfile, "a+");
-                fclose(touch);
-                printf("\n");
+                full_len = strlen(PATH) + strlen(NAME);
+                buffer = malloc(full_len);
 
+                strftime(newfile, strlen(NAME), "%F_%T-sl.txt", lt);
+                printf("Creating new file %s...\n", newfile);
+
+                strcpy(buffer, PATH);
+                strcat(buffer, "/");
+                strcat(buffer, newfile);
+                printf("%s\n", buffer);
+
+                touch = fopen(buffer, "a+");
+                fclose(touch);
+                free(buffer);
+                printf("\n");
         }
 
 
+        /* fill a dirent array with every file in the directory */
         parsedir(PATH, &ent, &count);
         
-        /* we will store the time_t here */
+        /* we will store the time_t associated with each file here 
+         * TODO why is this declared earlier, should it be within a smaller 
+         * scope? */
         t = 0;
 
-        /* removed so -e works with lp */
-        /* printf("Finding most recent file...\n\n"); */
-
         for(i = 0; i < count; i++) {
-                /* ignore ., and .. */
+                /* ignore . and .. */
                 if (strcmp(ent[i].d_name, ".") == 0 || strcmp(ent[i].d_name, "..") == 0)
                         continue;
 
+                /* TODO why is fullpath declared so much earlier, is this the
+                 * correct thing to do? */
         	strcpy(fullpath, PATH);
                 strcat(fullpath, "/");
                 strcat(fullpath, ent[i].d_name);
 
-                /* removed so -e works with lp */
-                /*printf("%s\n", ent[i].d_name);*/
-                /* removed so -e works with lp */
-                /* printf("%s\n", fullpath); */
-
                 stat(fullpath, &attr);
-
-                /* removed so -e works with lp */
-                /* printf("\ttime since epoch: %ld\n", attr.st_mtime); */
 
                 /* check if the current file's epoch time is larger than the largerst previous one. */
                 if (attr.st_mtime > t) {
-                        /* removed so -e works with lp */
-                        /* printf("\t%s was modified more recently than previous files.\n", ent[i].d_name); */
-
                         /* store the new largest epoch time, and the filename */
 	                t = attr.st_mtime;
                         latestpath = ent[i].d_name;
@@ -193,7 +142,8 @@ int main(int argc, char*argv[])
         }
         free(ent);
 
-        /* concatenate the most recently edited file with PATH/ */
+        /* concatenate the most recently edited file with PATH/
+         * TODO again, fulllatest not really necessary */
         strcpy(fulllatest, PATH);
         strcat(fulllatest, "/");
         strcat(fulllatest, latestpath);
@@ -208,6 +158,41 @@ int main(int argc, char*argv[])
                         printf("%c",s);
                 }
                 fclose(fp);
+                exit(0);
+        }
+
+        /* open file with EDITOR */
+        if (oflag) {
+		#define CHECK_COMMAND(X) ((system("which " X " 2>&1 >/dev/null") == 0) ? ("" X) : NULL)
+                const char *editor;
+                char *buffer;
+                /* find some editor to use */
+		if (!(
+				(editor = getenv("EDITOR")) ||
+				(editor = CHECK_COMMAND("nano")) ||
+				(editor = CHECK_COMMAND("pico")) ||
+				(editor = CHECK_COMMAND("vim")) ||
+				(editor = CHECK_COMMAND("vi")) ||
+				(editor = CHECK_COMMAND("ex")) ||
+				(editor = CHECK_COMMAND("ed")))) {
+			editor = "\0";
+		}
+		#undef CHECK_COMMAND
+
+                if (!strcmp("\0", editor)) {
+                        printf("Unable to find editor.\nSet the EDITOR environment variable.");
+                        exit(-1);
+                }
+
+                buffer = malloc(strlen(editor) + strlen(fulllatest) + 2);
+                strcpy(buffer, editor);
+                strcat(buffer, " ");
+                strcat(buffer, fulllatest);
+
+                printf("Opening %s with %s...\n", latestpath, editor);
+                system(buffer);
+
+                free(buffer);
                 exit(0);
         }
 

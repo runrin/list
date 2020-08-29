@@ -1,3 +1,13 @@
+-something to open EDITOR
+THIS IS THE BIG ONE!
+
+
+-rm or something to remove /regex/ match, or numbered match
+auto number items on list
+
+
+
+
 make it a csv
 or some human readable doc would be better for manual editing
 

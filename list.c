@@ -8,13 +8,14 @@
 #include <dirent.h>
 #include <pwd.h>
 
+/* XXX set a path to the directory where you will store your lists XXX */
 #define PATH "/home/runrin/docs/shop"
-#define NAME "XXXX-XX-XX_XX:XX:XX-sl.txt"
+#define NAME "XXXX-XX-XX_XX:XX:XX.txt"
 
 /* take a path to a directory, a dirent array, and an unsigned int, and populate
  * the array with dirents of each file within the directory, out_num is set to
  * the total number of files */
-int parsedir(char *path, struct dirent **out, unsigned *out_num)
+int parse_dir(char *path, struct dirent **out, unsigned *out_num)
 {
         DIR *dir;
         unsigned int capacity;
@@ -41,13 +42,16 @@ int parsedir(char *path, struct dirent **out, unsigned *out_num)
 
 int main(int argc, char*argv[])
 {
-        /* unsigned i; */
-        char *newestfp;
+        char *recent_fp;
         int c, nflag, eflag, oflag;
-        
-        newestfp = (char *) malloc(100);
+        size_t full_len;
 
-/*----------------------------------------------------------------------------*/
+        /* 1 for NULL terminator, 1 for the / between the path and filename */
+        full_len = strlen(PATH) + strlen(NAME) + 2;
+        
+        recent_fp = malloc(full_len);
+
+/*============================================================================*/
 
         nflag = eflag = oflag = 0;
         while ((c = getopt (argc, argv, "n:eho")) != -1)
@@ -64,62 +68,67 @@ int main(int argc, char*argv[])
                                 break;
 
                         case 'h':
-                                printf("Usage: list [OPTION] item1 item2 ...\n");
-                                printf("  -n\tcreate new list and append items\n");
-                                printf("  -e\techo current list to stdout\n");
-                                printf("  -o\topen current list in EDITOR\n");
-                                printf("  -h\tdisplay this help and exit\n");
+                                puts("Usage: list [OPTION] item1 item2 ...");
+                                puts("  -n\tcreate new list and append items");
+                                puts("  -e\techo current list to stdout");
+                                puts("  -o\topen current list in EDITOR");
+                                puts("  -h\tdisplay this help and exit");
                                 exit(0);
                         default:
                                 break;
                         return 1;
                 }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================*/
 
         /* create a new file with a name based on the date and time */
         if (nflag) {
                 time_t nft;
                 struct tm *lt;
-                char *buffer, *newfp;
-                size_t full_len;
+                char *buffer, *new_fp;
                 FILE *touch;
 
-                newfp = (char *) malloc(100);
+                new_fp = malloc(100);
 
                 time(&nft);
                 lt = localtime(&nft);
 
-                full_len = strlen(PATH) + strlen(NAME);
                 buffer = malloc(full_len);
 
-                strftime(newfp, strlen(NAME) + 1, "%F_%T-sl.txt", lt);
-                printf("Creating new file %s...\n", newfp);
+                strftime(new_fp, strlen(NAME) + 1, "%F_%T.txt", lt);
+                printf("Creating new file %s...\n", new_fp);
 
                 strcpy(buffer, PATH);
                 strcat(buffer, "/");
-                strcat(buffer, newfp);
+                strcat(buffer, new_fp);
 
-                touch = fopen(buffer, "a+");
-                fclose(touch);
+		if((touch = fopen(buffer, "a+")) != NULL) {
+			fclose(touch);
+		}
+		else {
+			fprintf(stderr, "Could not open file '%s'\n", buffer);
+			return EXIT_FAILURE;
+		}
                 free(buffer);
-                printf("\n");
+                free(new_fp);
         }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================*/
 
         /* determine the most recent file and save the path */
         {
                 time_t t;
-                char *buffer, *lastpath;
+                char *buffer, *last_path;
                 struct dirent *ent;
                 struct stat attr;
                 unsigned count;
 
-                buffer = lastpath = (char *) malloc(100);
+                /* last path will contain the path to the most recent file in
+                 * our directory */
+                buffer = malloc(100);
 
                 /* fill a dirent array with every file in the directory */
-                parsedir(PATH, &ent, &count);
+                parse_dir(PATH, &ent, &count);
         
                 t = 0;
                 for(unsigned i = 0; i < count; i++) {
@@ -140,24 +149,27 @@ int main(int argc, char*argv[])
                                 /* store the new largest epoch time, and the
                                  * filename */
                                 t = attr.st_mtime;
-                                lastpath = ent[i].d_name;
+                                last_path = ent[i].d_name;
                         }
                 }
-                free(ent);
 
                 /* save the final path for later */
-                strcpy(newestfp, PATH);
-                strcat(newestfp, "/");
-                strcat(newestfp, lastpath);
+                strcpy(recent_fp, PATH);
+                strcat(recent_fp, "/");
+                strcat(recent_fp, last_path);
+
+                free(buffer);
+                /* last_path is freed with ent. they point to the same thing*/
+                free(ent);
         }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================*/
 
         /* simply print the file to stdout, and exit */
         if (eflag) {
                 char s;
                 FILE *fp;
-                fp=fopen(newestfp,"r");
+                fp=fopen(recent_fp,"r");
                 while((s=fgetc(fp))!=EOF) {
                         printf("%c",s);
                 }
@@ -165,13 +177,14 @@ int main(int argc, char*argv[])
                 exit(0);
         }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================*/
 
         /* open file with EDITOR and exit */
         if (oflag) {
 		#define CHECK_COMMAND(X) ((system("which " X " 2>&1 >/dev/null") == 0) ? ("" X) : NULL)
                 const char *editor;
                 char *buffer;
+                int out;
                 /* find some editor to use */
 		if (!(
 				(editor = getenv("EDITOR")) ||
@@ -190,29 +203,35 @@ int main(int argc, char*argv[])
                         exit(-1);
                 }
 
-                buffer = malloc(strlen(editor) + strlen(newestfp) + 2);
+                buffer = malloc(strlen(editor) + strlen(recent_fp) + 2);
                 strcpy(buffer, editor);
                 strcat(buffer, " ");
-                strcat(buffer, newestfp);
+                strcat(buffer, recent_fp);
 
-                printf("Opening %s with %s...\n", newestfp, editor);
-                system(buffer);
+                printf("Opening %s with %s...\n", recent_fp, editor);
+                out = system(buffer);
 
                 free(buffer);
-                exit(0);
+                exit(out);
         }
 
-/*----------------------------------------------------------------------------*/
+/*============================================================================*/
 
         /* add items to file */
         {
                 FILE *fp;
-                fp = fopen(newestfp, "a+");
-                for (int i = nflag ? 2 : 1; i < argc; i++) { 
-                        printf("appending \"%s\" to: %s\n", argv[i], newestfp);
-                        fprintf(fp, "%s\n", argv[i]);
-                }
-                fclose(fp);
+		if((fp = fopen(recent_fp, "a+")) != NULL) {
+			for (int i = nflag ? 2 : 1; i < argc; i++) { 
+				printf("appending \"%s\" to: %s\n", argv[i], recent_fp);
+				fprintf(fp, "%s\n", argv[i]);
+			}
+			fclose(fp);
+		}
+		else {
+			fprintf(stderr, "Could not open file '%s'\n", recent_fp);
+			return EXIT_FAILURE;
+		}
+                free(recent_fp);
                 exit(0);
         }
 }

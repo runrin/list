@@ -54,7 +54,7 @@ int main(int argc, char*argv[])
 /*============================================================================*/
 
         nflag = eflag = oflag = 0;
-        while ((c = getopt (argc, argv, "n:eho")) != -1)
+        while ((c = getopt (argc, argv, "n:ehov")) != -1)
                 switch (c)
                 {
                         case 'n':
@@ -72,7 +72,11 @@ int main(int argc, char*argv[])
                                 puts("  -n\tcreate new list and append items");
                                 puts("  -e\techo current list to stdout");
                                 puts("  -o\topen current list in EDITOR");
+                                puts("  -v\tdisplay version information");
                                 puts("  -h\tdisplay this help and exit");
+                                exit(0);
+                        case 'v':
+                                puts("list version 0.1.0");
                                 exit(0);
                         default:
                                 break;

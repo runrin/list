@@ -1,5 +1,12 @@
 add support for multiple lists? ie, shopping, todo, etc
 
+list -ec c for count?
+        add a number to each list item.
+        
+                1. item1
+                2. item2
+                3. ...
+
 -rm or something to remove /regex/ match, or numbered match
 auto number items on list
 

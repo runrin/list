@@ -12,6 +12,8 @@
 #define PATH "/home/runrin/docs/shop"
 #define NAME "XXXX-XX-XX_XX:XX:XX.txt"
 
+/*============================================================================*/
+
 /* take a path to a directory, a dirent array, and an unsigned int, and populate
  * the array with dirents of each file within the directory, out_num is set to
  * the total number of files */
@@ -40,6 +42,27 @@ int parse_dir(char *path, struct dirent **out, unsigned *out_num)
         }
 }
 
+/*============================================================================*/
+
+static void show_help()
+{
+        puts("Usage: list [OPTION] item1 item2 ...");
+        puts("  -n\tcreate new list and append items");
+        puts("  -e\techo current list to stdout");
+        puts("  -o\topen current list in EDITOR");
+        puts("  -v\tdisplay version information");
+        puts("  -h\tdisplay this help and exit");
+}
+
+/*============================================================================*/
+
+static void show_version()
+{
+        puts("list version 0.1.0"); 
+}
+
+/*============================================================================*/
+
 int main(int argc, char*argv[])
 {
         char *recent_fp;
@@ -57,29 +80,12 @@ int main(int argc, char*argv[])
         while ((c = getopt (argc, argv, "n:ehov")) != -1)
                 switch (c)
                 {
-                        case 'n':
-                                nflag = 1;
-                                break;
-                        case 'e':
-                                eflag = 1;
-                                break;
-                        case 'o':
-                                oflag = 1;
-                                break;
-
-                        case 'h':
-                                puts("Usage: list [OPTION] item1 item2 ...");
-                                puts("  -n\tcreate new list and append items");
-                                puts("  -e\techo current list to stdout");
-                                puts("  -o\topen current list in EDITOR");
-                                puts("  -v\tdisplay version information");
-                                puts("  -h\tdisplay this help and exit");
-                                exit(0);
-                        case 'v':
-                                puts("list version 0.1.0");
-                                exit(0);
-                        default:
-                                break;
+                        case 'n': nflag = 1; break;
+                        case 'e': eflag = 1; break;
+                        case 'o': oflag = 1; break;
+                        case 'h': show_help(); exit(0);
+                        case 'v': show_version(); exit(0);
+                        default: break;
                         return 1;
                 }
 
@@ -185,7 +191,7 @@ int main(int argc, char*argv[])
 
         /* open file with EDITOR and exit */
         if (oflag) {
-		#define CHECK_COMMAND(X) ((system("which " X " 2>&1 >/dev/null") == 0) ? ("" X) : NULL)
+		#define CHECK_COMMAND(X) ((system("which " X " 2> /dev/null 1> /dev/null") == 0) ? ("" X) : NULL)
                 const char *editor;
                 char *buffer;
                 int out;
@@ -203,7 +209,8 @@ int main(int argc, char*argv[])
 		#undef CHECK_COMMAND
 
                 if (!strcmp("\0", editor)) {
-                        printf("Unable to find editor.\nSet the EDITOR environment variable.");
+                        puts("Unable to find editor.");
+                        puts("Set the EDITOR environment variable.");
                         exit(-1);
                 }
 

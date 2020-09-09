@@ -1,8 +1,8 @@
 plainassmake:
-	clang -Wextra -g list.c -o list
+	tcc -Wextra -g list.c -o list
 
 install:
-	clang -Wextra -g list.c -o list
+	tcc -Wextra -g list.c -o list
 	cp list /usr/local/bin/
 
 clean:

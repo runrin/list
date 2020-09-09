@@ -78,8 +78,7 @@ int main(int argc, char*argv[])
 
         nflag = eflag = oflag = 0;
         while ((c = getopt (argc, argv, "n:ehov")) != -1)
-                switch (c)
-                {
+                switch (c) {
                         case 'n': nflag = 1; break;
                         case 'e': eflag = 1; break;
                         case 'o': oflag = 1; break;
@@ -88,6 +87,13 @@ int main(int argc, char*argv[])
                         default: break;
                         return 1;
                 }
+
+/*============================================================================*/
+
+        if (!nflag && !oflag && !eflag && !argv[1]) {
+                show_help();
+                exit(0);
+        }
 
 /*============================================================================*/
 

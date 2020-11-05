@@ -1,9 +1,13 @@
-normal:
-	tcc -Wextra -g list.c -o list
+include config.mk
 
-install:
-	tcc -Wextra -g list.c -o list
-	cp list /usr/local/bin/
+normal:
+	${CC} ${CFLAGS} list.c -o list
+
+install: normal
+	cp list ${DIR}
 
 clean:
-	rm ./list
+	rm list
+
+uninstall:
+	rm ${DIR}/list

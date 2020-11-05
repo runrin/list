@@ -1,4 +1,4 @@
-plainassmake:
+normal:
 	tcc -Wextra -g list.c -o list
 
 install:

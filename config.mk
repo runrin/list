@@ -1,5 +1,5 @@
 # install path
-DIR = /usr/local/bin
+PREFIX = /usr/local
 
 #flags
 CFLAGS = -pedantic -Wall -Wno-deprecated-declarations

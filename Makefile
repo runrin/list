@@ -4,10 +4,10 @@ normal:
 	${CC} ${CFLAGS} list.c -o list
 
 install: normal
-	cp list ${DIR}
+	cp list ${PREFIX}/bin
 
 clean:
 	rm list
 
 uninstall:
-	rm ${DIR}/list
+	rm ${PREFIX}/bin/list

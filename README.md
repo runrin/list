@@ -8,7 +8,7 @@ piping to `lp`) without having to type the full path to your list.
 Installation
 ------------
 Edit `list.c` to point to your desired list directory on your machine, and
-`config.mk` to match your local setup (list is installed into the /usr/local
+`config.mk` to match your local setup (`list` is installed into the /usr/local
 namespace by default).
 
 Afterwards enter the following command to build and install `list` (if

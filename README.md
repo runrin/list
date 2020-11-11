@@ -14,13 +14,13 @@ namespace by default).
 Afterwards enter the following command to build and install `list` (if
 necessary as root):
         
-        make install
+    make install
 
 Usage
 -----
-        list [OPTION] item1 item2 ...
-          -n    create new list and append items
-          -e    echo current list to stdout
-          -o    open current list in EDITOR
-          -v    display version information
-          -h    display this help and exit
+    list [OPTION] item1 item2 ...
+      -n    create new list and append items
+      -e    echo current list to stdout
+      -o    open current list in EDITOR
+      -v    display version information
+      -h    display this help and exit
